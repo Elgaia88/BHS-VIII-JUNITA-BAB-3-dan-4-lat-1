@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Ujian Bahasa Indonesia - Kelas VIII</title>
+    <!-- Library Canvas Confetti untuk efek selebrasi -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --correct-bg: #16a34a;
+            --wrong-bg: #dc2626;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--bg-card);
+            width: 100%;
+            max-width: 750px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 25px;
+        }
+
+        /* Form Halaman Awal */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.99);
+        }
+
+        /* Header Kuis & Timer */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #e0e7ff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .timer-box {
+            background-color: var(--primary);
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 16px;
+        }
+
+        .timer-warning {
+            background-color: var(--wrong-bg);
+            animation: pulse 0.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Area Pertanyaan & Pilihan Jawaban */
+        .question-text {
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            color: #0f172a;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Kontras tinggi antara latar jawaban dan font jawaban */
+        .option-btn {
+            text-align: left;
+            padding: 15px 18px;
+            background-color: #f8fafc; /* Latar terang */
+            color: #0f172a;            /* Font gelap */
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background-color: #e2e8f0;
+            border-color: #94a3b8;
+        }
+
+        .option-btn:disabled {
+            cursor: default;
+        }
+
+        /* Warna Benar (Hijau) & Salah (Merah) dengan font putih agar kontras */
+        .option-btn.correct {
+            background-color: var(--correct-bg) !important;
+            color: #ffffff !important;
+            border-color: #15803d !important;
+            font-weight: bold;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-bg) !important;
+            color: #ffffff !important;
+            border-color: #b91c1c !important;
+            font-weight: bold;
+        }
+
+        .status-banner {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+
+        .next-btn-container {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        /* Halaman Hasil & Review */
+        .score-card {
+            background: linear-gradient(135deg, #4f46e5, #3b82f6);
+            color: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .score-number {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 10px 0;
+        }
+
+        .review-section {
+            max-height: 450px;
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-bottom: 20px;
+            border-top: 2px solid #e2e8f0;
+            padding-top: 15px;
+        }
+
+        .review-item {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .review-q {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #0f172a;
+        }
+
+        .review-ans {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .text-green {
+            color: #15803d;
+            font-weight: bold;
+        }
+
+        .text-red {
+            color: #b91c1c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- HALAMAN 1: START SCREEN -->
+    <div id="start-screen">
+        <h1 id="main-quiz-title">Ujian Bahasa Indonesia Kelas VIII</h1>
+        <p class="subtitle">Materi: Artikel Ilmiah Populer & Resensi Buku Fiksi (30 Soal)</p>
+
+        <div class="form-group">
+            <label for="player-name">Nama Pemain / Siswa:</label>
+            <input type="text" id="player-name" placeholder="Masukkan nama lengkap Anda..." required>
+        </div>
+
+        <div class="form-group">
+            <label for="time-duration">Pilih Durasi Waktu per Soal:</label>
+            <select id="time-duration">
+                <option value="15">15 Detik per Soal</option>
+                <option value="30" selected>30 Detik per Soal</option>
+            </select>
+        </div>
+
+        <button class="btn" onclick="startQuiz()">Mulai Kuis Sekarang</button>
+    </div>
+
+    <!-- HALAMAN 2: QUIZ SCREEN -->
+    <div id="quiz-screen" class="hidden">
+        <div class="quiz-header">
+            <span id="question-counter">Soal 1 / 30</span>
+            <span id="player-display">Peserta: -</span>
+            <div class="timer-box" id="timer-box">Waktu: <span id="time-left">30</span>s</div>
+        </div>
+
+        <div class="question-text" id="question-text">Memuat soal...</div>
+
+        <div class="options-container" id="options-container">
+            <!-- Pilihan jawaban akan dimasukkan lewat JS -->
+        </div>
+
+        <div id="status-banner" class="status-banner"></div>
+
+        <div class="next-btn-container">
+            <button id="next-btn" class="btn hidden" onclick="nextQuestion()">Soal Selanjutnya &rarr;</button>
+        </div>
+    </div>
+
+    <!-- HALAMAN 3: RESULT & REVIEW SCREEN -->
+    <div id="result-screen" class="hidden">
+        <h2 id="result-quiz-title">Ujian Bahasa Indonesia Kelas VIII</h2>
+        <div class="score-card">
+            <p id="result-player-name" style="font-size: 18px; font-weight: 600;">Nama Peserta</p>
+            <div class="score-number" id="final-score">0</div>
+            <p id="score-detail">Benar 0 dari 30 soal</p>
+        </div>
+
+        <h3 style="margin-bottom: 12px; color: #1e293b;">Review Jawaban Anda:</h3>
+        <div class="review-section" id="review-container">
+            <!-- Daftar review akan dimasukkan lewat JS -->
+        </div>
+
+        <button class="btn" onclick="restartQuiz()">Ulangi Kuis (Acak Ulang Soal)</button>
+    </div>
+</div>
+
+<script>
+    const QUIZ_TITLE = "Ujian Bahasa Indonesia: Artikel Ilmiah Populer & Resensi Buku Fiksi";
+
+    // Bank 30 Soal Prediksi Ujian Berdasarkan Dokumen Materi
+    const masterQuestions = [
+        {
+            q: "Apa yang dimaksud dengan artikel ilmiah populer?",
+            options: [
+                "Karya tulis nonfiksi yang menyampaikan hasil penelitian atau ilmu pengetahuan dengan bahasa ringan dan mudah dipahami",
+                "Karya tulis fiksi yang berisi cerita khayalan untuk menghibur masyarakat luas",
+                "Karya tulis akademik yang menggunakan istilah teknis rumit khusus untuk kalangan profesor",
+                "Tulisan berisi ulasan penilaian kelebihan dan kekurangan suatu buku sastra"
+            ],
+            answer: "Karya tulis nonfiksi yang menyampaikan hasil penelitian atau ilmu pengetahuan dengan bahasa ringan dan mudah dipahami"
+        },
+        {
+            q: "Manakah penulisan judul artikel ilmiah populer yang paling tepat sesuai kaidah?",
+            options: [
+                "Pembelajaran Bahasa Indonesia dan Media Sosial di Kalangan Remaja",
+                "Pembelajaran Bahasa Indonesia Dan Media Sosial Di Kalangan Remaja",
+                "pembelajaran bahasa indonesia dan media sosial di kalangan remaja",
+                "Pembelajaran Bahasa Indonesia dan Media Sosial di kalangan Remaja"
+            ],
+            answer: "Pembelajaran Bahasa Indonesia dan Media Sosial di Kalangan Remaja"
+        },
+        {
+            q: "Kata tugas berikut ini yang TIDAK ditulis dengan huruf kapital di awal kata pada penulisan judul adalah...",
+            options: [
+                "di, ke, dari, dengan, pada",
+                "yang, adalah, untuk, dalam, oleh",
+                "tentang, terhadap, sebagai, secara, agar",
+                "antara, melalui, beserta, demi, guna"
+            ],
+            answer: "di, ke, dari, dengan, pada"
+        },
+        {
+            q: "Bagian struktur artikel ilmiah populer yang memuat latar belakang, rumusan masalah, dan tujuan adalah...",
+            options: [
+                "Pendahuluan",
+                "Judul",
+                "Isi",
+                "Penutup"
+            ],
+            answer: "Pendahuluan"
+        },
+        {
+            q: "Pada bagian struktur 'Isi' dalam artikel ilmiah populer, pendapat (opini) penulis harus diperkuat dengan...",
+            options: [
+                "Bukti, data, alasan, dan rujukan pendapat pakar agar dapat dipertanggungjawabkan secara ilmiah",
+                "Alur cerita imajinatif dan tokoh-tokoh yang menarik perhatian pembaca",
+                "Identitas buku seperti penerbit, tahun terbit, dan nomor ISBN",
+                "Sinopsis cerita dan rekomendasi sasaran pembaca"
+            ],
+            answer: "Bukti, data, alasan, dan rujukan pendapat pakar agar dapat dipertanggungjawabkan secara ilmiah"
+        },
+        {
+            q: "Bagaimana cara menyajikan saran atau solusi pada bagian penutup artikel ilmiah populer?",
+            options: [
+                "Menggunakan bahasa yang menarik sehingga tidak terkesan menggurui pembaca",
+                "Menggunakan kalimat perintah yang tegas dan memaksa pembaca",
+                "Memasukkan daftar pustaka dan catatan kaki yang panjang",
+                "Mengulang seluruh data penelitian dari bagian pendahuluan"
+            ],
+            answer: "Menggunakan bahasa yang menarik sehingga tidak terkesan menggurui pembaca"
+        },
+        {
+            q: "Kaidah kebahasaan artikel ilmiah populer mengharuskan penggunaan kalimat denotatif, artinya...",
+            options: [
+                "Menggunakan kata-kata bermakna lugas dan tidak memiliki tafsir ganda",
+                "Menggunakan kata-kata kiasan yang puitis dan ekspresif",
+                "Menggunakan banyak istilah bahasa asing agar terlihat modern",
+                "Menggunakan bahasa daerah setempat agar lebih akrab"
+            ],
+            answer: "Menggunakan kata-kata bermakna lugas dan tidak memiliki tafsir ganda"
+        },
+        {
+            q: "Manakah kelompok kata berikut yang merupakan contoh konjungsi kausalitas (sebab-akibat)?",
+            options: [
+                "sebab, karena, oleh karena itu",
+                "dan, atau, melainkan, sehingga",
+                "memang, justru",
+                "ketika, sebelum, sesudah, sejak"
+            ],
+            answer: "sebab, karena, oleh karena itu"
+        },
+        {
+            q: "Kata 'dan, atau, melainkan, sehingga' dalam kaidah kebahasaan artikel ilmiah populer termasuk jenis konjungsi...",
+            options: [
+                "Konjungsi koordinatif",
+                "Konjungsi kausalitas",
+                "Konjungsi penegasan",
+                "Konjungsi temporal"
+            ],
+            answer: "Konjungsi koordinatif"
+        },
+        {
+            q: "Perhatikan kalimat berikut: 'Pemerintah memang sudah berupaya menekan polusi udara, tetapi hasilnya justru belum maksimal.' Kata bercetak miring merupakan contoh konjungsi...",
+            options: [
+                "Konjungsi penegasan",
+                "Konjungsi temporal",
+                "Konjungsi kausalitas",
+                "Konjungsi penerang"
+            ],
+            answer: "Konjungsi penegasan"
+        },
+        {
+            q: "Manakah yang termasuk contoh 'kata rujukan' dalam artikel ilmiah populer?",
+            options: [
+                "menurut, berdasarkan, menunjukkan, tersebut",
+                "menyiasati, mencegah, menyebabkan, menduga",
+                "sejak, semenjak, kemudian, akhirnya",
+                "bahwa, yakni, yaitu, adalah, ialah"
+            ],
+            answer: "menurut, berdasarkan, menunjukkan, tersebut"
+        },
+        {
+            q: "Verba yang menerangkan reaksi terhadap suatu tindakan seperti 'menyiasati, mencegah, menyebabkan, menduga' disebut...",
+            options: [
+                "Kata kerja mental",
+                "Kata rujukan",
+                "Konjungsi koordinatif",
+                "Kalimat denotatif"
+            ],
+            answer: "Kata kerja mental"
+        },
+        {
+            q: "Urutan langkah menulis artikel ilmiah populer yang benar adalah...",
+            options: [
+                "Tentukan tema → Rumuskan tujuan → Susun kerangka → Kumpulkan bahan & data → Kembangkan kerangka → Baca ulang & revisi",
+                "Susun kerangka → Tentukan tema → Kumpulkan data → Rumuskan tujuan → Revisi → Kembangkan kerangka",
+                "Kumpulkan bahan → Tentukan tema → Susun kerangka → Kembangkan kerangka → Rumuskan tujuan → Revisi",
+                "Tentukan tema → Kumpulkan data → Baca ulang → Susun kerangka → Rumuskan tujuan → Kembangkan kerangka"
+            ],
+            answer: "Tentukan tema → Rumuskan tujuan → Susun kerangka → Kumpulkan bahan & data → Kembangkan kerangka → Baca ulang & revisi"
+        },
+        {
+            q: "Berikut ini yang merupakan tujuan penulisan artikel ilmiah populer adalah...",
+            options: [
+                "Mempermudah penyebaran ilmu pengetahuan agar dapat dipahami oleh masyarakat awam",
+                "Menjadi bahan pertimbangan pembaca sebelum membeli sebuah buku novel",
+                "Menjadi sarana uji kualitas karya bagi pihak penerbit buku",
+                "Menghibur pembaca melalui cerita khayalan yang memiliki alur menarik"
+            ],
+            answer: "Mempermudah penyebaran ilmu pengetahuan agar dapat dipahami oleh masyarakat awam"
+        },
+        {
+            q: "Apa pengertian dari kegiatan meresensi buku fiksi?",
+            options: [
+                "Kegiatan mengulas atau menilai kelebihan dan kekurangan sebuah buku fiksi",
+                "Kegiatan menyalin ulang seluruh isi cerita buku fiksi menjadi lebih singkat",
+                "Kegiatan meneliti fakta ilmiah yang terdapat di dalam sebuah novel",
+                "Kegiatan menerjemahkan buku fiksi dari bahasa asing ke bahasa Indonesia"
+            ],
+            answer: "Kegiatan mengulas atau menilai kelebihan dan kekurangan sebuah buku fiksi"
+        },
+        {
+            q: "Apa tujuan meresensi buku fiksi bagi pihak PENERBIT?",
+            options: [
+                "Sebagai media uji kualitas karya dan sarana umpan balik membangun untuk karya berikutnya",
+                "Sebagai bahan pertimbangan sebelum memutuskan untuk membeli sebuah buku",
+                "Untuk mendapatkan ringkasan cerita tanpa perlu membaca keseluruhan buku",
+                "Untuk mempermudah penyebaran ilmu pengetahuan kepada masyarakat awam"
+            ],
+            answer: "Sebagai media uji kualitas karya dan sarana umpan balik membangun untuk karya berikutnya"
+        },
+        {
+            q: "Salah satu tujuan meresensi buku fiksi bagi PEMBACA adalah...",
+            options: [
+                "Memberikan gambaran singkat serta menjadi bahan pertimbangan sebelum membeli suatu karya",
+                "Sebagai sarana umpan balik untuk memperbaiki cetakan penerbit berikutnya",
+                "Menguji kualitas cetak dan ketebalan kertas yang digunakan penerbit",
+                "Menyampaikan hasil penelitian ilmiah dengan bahasa yang ringan"
+            ],
+            answer: "Memberikan gambaran singkat serta menjadi bahan pertimbangan sebelum membeli suatu karya"
+        },
+        {
+            q: "Dalam metode membaca SQ3R, tahap 'Survey' dilakukan dengan cara...",
+            options: [
+                "Melakukan pembacaan layap pada judul buku, ringkasan sampul belakang, dan daftar isi",
+                "Mengajukan pertanyaan-pertanyaan yang berhubungan dengan bagian buku",
+                "Menceritakan kembali apa yang sudah dibaca menggunakan kalimat sendiri",
+                "Menuliskan kembali kesimpulan tanpa melihat buku berdasarkan catatan"
+            ],
+            answer: "Melakukan pembacaan layap pada judul buku, ringkasan sampul belakang, dan daftar isi"
+        },
+        {
+            q: "Apa kepanjangan dari metode membaca SQ3R secara berurutan?",
+            options: [
+                "Survey, Question, Read, Recall/Recite, Review",
+                "Study, Question, Read, Remember, Rewrite",
+                "Scan, Query, Read, Recall, Revise",
+                "Survey, Quote, Read, Recite, Report"
+            ],
+            answer: "Survey, Question, Read, Recall/Recite, Review"
+        },
+        {
+            q: "Pada tahap 'Read' dalam metode SQ3R, apa yang harus dilakukan ketika menemukan paragraf yang sulit dipahami?",
+            options: [
+                "Mengurangi kecepatan membaca, atau berhenti dan mengulangi kembali paragraf tersebut",
+                "Langsung melompati paragraf tersebut menuju bagian penutup buku",
+                "Menutup buku dan langsung membuat mindmap tanpa melihat catatan",
+                "Mengabaikan bagian sulit dan hanya membaca kata yang dicetak miring"
+            ],
+            answer: "Mengurangi kecepatan membaca, atau berhenti dan mengulangi kembali paragraf tersebut"
+        },
+        {
+            q: "Membuat catatan struktur atau mindmap serta berbicara kepada diri sendiri tentang isi bacaan dengan kalimat sendiri termasuk tahap SQ3R bagian...",
+            options: [
+                "Recall / Recite (Mengingat Kembali)",
+                "Survey (Peninjauan)",
+                "Question (Bertanya)",
+                "Review (Tinjauan Akhir)"
+            ],
+            answer: "Recall / Recite (Mengingat Kembali)"
+        },
+        {
+            q: "Data berupa judul buku, pengarang, penerbit, tahun terbit, ISBN, dan tebal buku termasuk dalam struktur resensi bagian...",
+            options: [
+                "Identitas",
+                "Sinopsis",
+                "Analisis",
+                "Rekomendasi"
+            ],
+            answer: "Identitas"
+        },
+        {
+            q: "Bagian struktur resensi yang mencantumkan urgensi buku, kelebihan buku, serta kekurangan buku disebut...",
+            options: [
+                "Analisis",
+                "Sinopsis",
+                "Identitas",
+                "Judul Resensi"
+            ],
+            answer: "Analisis"
+        },
+        {
+            q: "Bagian dalam struktur resensi yang menjelaskan sasaran pembaca (buku tersebut cocok dibaca oleh siapa) adalah...",
+            options: [
+                "Rekomendasi",
+                "Sinopsis",
+                "Analisis",
+                "Identitas"
+            ],
+            answer: "Rekomendasi"
+        },
+        {
+            q: "Perhatikan kalimat resensi berikut: 'Novel ini sangat cocok dibaca oleh para remaja agar dalam menjalani kehidupan selalu tabah.' Kalimat tersebut merupakan ciri kebahasaan teks resensi berupa...",
+            options: [
+                "Pernyataan saran atau rekomendasi",
+                "Konjungsi penerang",
+                "Konjungsi temporal",
+                "Konjungsi penyebaban"
+            ],
+            answer: "Pernyataan saran atau rekomendasi"
+        },
+        {
+            q: "Kata 'bahwa, yakni, yaitu, adalah, ialah' dalam teks resensi berfungsi sebagai...",
+            options: [
+                "Konjungsi penerang",
+                "Konjungsi temporal",
+                "Konjungsi penyebaban",
+                "Kata kerja mental"
+            ],
+            answer: "Konjungsi penerang"
+        },
+        {
+            q: "Manakah kalimat berikut yang menggunakan konjungsi temporal dalam teks resensi?",
+            options: [
+                "Akhirnya sang ayah mengajak Gita untuk berobat di Singapura.",
+                "Dia adalah seorang artis cilik era 1998.",
+                "Kasus tersebut menjadi perdebatan karena biasanya hanya menyerang orang tua.",
+                "Buku ini sangat cocok dibaca para pelajar."
+            ],
+            answer: "Akhirnya sang ayah mengajak Gita untuk berobat di Singapura."
+        },
+        {
+            q: "Berikut ini yang merupakan ciri-ciri dari buku fiksi adalah...",
+            options: [
+                "Bersifat imajinatif, bertujuan menghibur, dan menggunakan bahasa konotatif serta ekspresif",
+                "Menyampaikan hasil penelitian ilmiah dengan bahasa lugas dan denotatif",
+                "Terikat ketat pada aturan penulisan ilmiah dan data statistik",
+                "Kebenarannya bersifat mutlak dan dapat diuji secara laboratorium"
+            ],
+            answer: "Bersifat imajinatif, bertujuan menghibur, dan menggunakan bahasa konotatif serta ekspresif"
+        },
+        {
+            q: "Karya fiksi prosa yang panjangnya berada di antara cerita pendek (cerpen) dan novel disebut...",
+            options: [
+                "Novelet",
+                "Dongeng",
+                "Cergam",
+                "Resensi"
+            ],
+            answer: "Novelet"
+        },
+        {
+            q: "Berikut ini yang BUKAN termasuk ragam karya buku fiksi adalah...",
+            options: [
+                "Artikel Ilmiah Populer",
+                "Novel",
+                "Novelet",
+                "Komik (Cergam)"
+            ],
+            answer: "Artikel Ilmiah Populer"
+        }
+    ];
+
+    // State Aplikasi
+    let shuffledQuestions = [];
+    let currentQuestionIndex = 0;
+    let scoreCount = 0;
+    let playerName = "";
+    let timePerQuestion = 30;
+    let timeLeft = 30;
+    let timerInterval = null;
+    let userHistory = [];
+    let isAnswered = false;
+
+    // Fungsi Pengacak Array (Fisher-Yates Shuffle)
+    function shuffleArray(array) {
+        const arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function startQuiz() {
+        const nameInput = document.getElementById("player-name").value.trim();
+        if (!nameInput) {
+            alert("Silakan masukkan nama Anda terlebih dahulu!");
+            return;
+        }
+
+        playerName = nameInput;
+        timePerQuestion = parseInt(document.getElementById("time-duration").value);
+
+        // Acak urutan soal dan acak urutan pilihan jawaban di setiap soal
+        shuffledQuestions = shuffleArray(masterQuestions).map(item => {
+            return {
+                q: item.q,
+                options: shuffleArray(item.options),
+                answer: item.answer
+            };
+        });
+
+        currentQuestionIndex = 0;
+        scoreCount = 0;
+        userHistory = [];
+
+        document.getElementById("player-display").textContent = `Peserta: ${playerName}`;
+        document.getElementById("start-screen").classList.add("hidden");
+        document.getElementById("result-screen").classList.add("hidden");
+        document.getElementById("quiz-screen").classList.remove("hidden");
+
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        isAnswered = false;
+        clearInterval(timerInterval);
+
+        const currentQ = shuffledQuestions[currentQuestionIndex];
+        document.getElementById("question-counter").textContent = `Soal ${currentQuestionIndex + 1} / ${shuffledQuestions.length}`;
+        document.getElementById("question-text").textContent = `${currentQuestionIndex + 1}. ${currentQ.q}`;
+
+        const optionsContainer = document.getElementById("options-container");
+        optionsContainer.innerHTML = "";
+
+        const statusBanner = document.getElementById("status-banner");
+        statusBanner.style.display = "none";
+        statusBanner.textContent = "";
+
+        document.getElementById("next-btn").classList.add("hidden");
+
+        const labels = ["A", "B", "C", "D"];
+        currentQ.options.forEach((optText, index) => {
+            const btn = document.createElement("button");
+            btn.className = "option-btn";
+            btn.textContent = `${labels[index]}. ${optText}`;
+            btn.dataset.value = optText;
+            btn.onclick = () => selectAnswer(btn, optText);
+            optionsContainer.appendChild(btn);
+        });
+
+        startTimer();
+    }
+
+    function startTimer() {
+        timeLeft = timePerQuestion;
+        const timeDisplay = document.getElementById("time-left");
+        const timerBox = document.getElementById("timer-box");
+
+        timeDisplay.textContent = timeLeft;
+        timerBox.classList.remove("timer-warning");
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timeDisplay.textContent = timeLeft;
+
+            if (timeLeft <= 5) {
+                timerBox.classList.add("timer-warning");
+            }
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                handleTimeOut();
+            }
+        }, 1000);
+    }
+
+    function handleTimeOut() {
+        if (isAnswered) return;
+        isAnswered = true;
+
+        const currentQ = shuffledQuestions[currentQuestionIndex];
+        const allButtons = document.querySelectorAll(".option-btn");
+
+        allButtons.forEach(btn => {
+            btn.disabled = true;
+            if (btn.dataset.value === currentQ.answer) {
+                btn.classList.add("correct");
+            }
+        });
+
+        const statusBanner = document.getElementById("status-banner");
+        statusBanner.style.display = "block";
+        statusBanner.style.backgroundColor = "#fee2e2";
+        statusBanner.style.color = "#b91c1c";
+        statusBanner.textContent = "Waktu Habis! Jawaban yang benar ditandai dengan warna hijau.";
+
+        userHistory.push({
+            question: currentQ.q,
+            userAnswer: "Tidak dijawab (Waktu Habis)",
+            correctAnswer: currentQ.answer,
+            isCorrect: false
+        });
+
+        showNextButton();
+    }
+
+    function selectAnswer(selectedBtn, selectedValue) {
+        if (isAnswered) return;
+        isAnswered = true;
+        clearInterval(timerInterval);
+
+        const currentQ = shuffledQuestions[currentQuestionIndex];
+        const isCorrect = selectedValue === currentQ.answer;
+        const allButtons = document.querySelectorAll(".option-btn");
+
+        allButtons.forEach(btn => {
+            btn.disabled = true;
+            if (btn.dataset.value === currentQ.answer) {
+                btn.classList.add("correct");
+            }
+        });
+
+        const statusBanner = document.getElementById("status-banner");
+        statusBanner.style.display = "block";
+
+        if (isCorrect) {
+            scoreCount++;
+            selectedBtn.classList.add("correct");
+            statusBanner.style.backgroundColor = "#dcfce7";
+            statusBanner.style.color = "#15803d";
+            statusBanner.textContent = "Tepat Sekali! Jawaban Anda Benar.";
+            triggerConfetti();
+        } else {
+            selectedBtn.classList.add("wrong");
+            statusBanner.style.backgroundColor = "#fee2e2";
+            statusBanner.style.color = "#b91c1c";
+            statusBanner.textContent = "Kurang Tepat! Jawaban yang benar ditandai hijau.";
+        }
+
+        userHistory.push({
+            question: currentQ.q,
+            userAnswer: selectedValue,
+            correctAnswer: currentQ.answer,
+            isCorrect: isCorrect
+        });
+
+        showNextButton();
+    }
+
+    function triggerConfetti() {
+        if (typeof confetti === "function") {
+            confetti({
+                particleCount: 80,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
+    }
+
+    function showNextButton() {
+        const nextBtn = document.getElementById("next-btn");
+        nextBtn.classList.remove("hidden");
+        if (currentQuestionIndex === shuffledQuestions.length - 1) {
+            nextBtn.textContent = "Lihat Hasil & Review";
+        } else {
+            nextBtn.textContent = "Soal Selanjutnya →";
+        }
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < shuffledQuestions.length) {
+            loadQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function showResults() {
+        document.getElementById("quiz-screen").classList.add("hidden");
+        document.getElementById("result-screen").classList.remove("hidden");
+
+        document.getElementById("result-quiz-title").textContent = QUIZ_TITLE;
+        document.getElementById("result-player-name").textContent = `Peserta: ${playerName}`;
+
+        // Rumus skor: (jumlah benar / total soal) * 100
+        const finalScore = Math.round((scoreCount / shuffledQuestions.length) * 100);
+        document.getElementById("final-score").textContent = finalScore;
+        document.getElementById("score-detail").textContent = `Benar ${scoreCount} dari ${shuffledQuestions.length} soal`;
+
+        if (finalScore >= 70) {
+            triggerConfetti();
+        }
+
+        const reviewContainer = document.getElementById("review-container");
+        reviewContainer.innerHTML = "";
+
+        userHistory.forEach((item, idx) => {
+            const div = document.createElement("div");
+            div.className = "review-item";
+
+            const userStatusClass = item.isCorrect ? "text-green" : "text-red";
+            const statusIcon = item.isCorrect ? "✔" : "✘";
+
+            div.innerHTML = `
+                <div class="review-q">${idx + 1}. ${item.question}</div>
+                <div class="review-ans">Jawaban Anda: <span class="${userStatusClass}">${statusIcon} ${item.userAnswer}</span></div>
+                ${!item.isCorrect ? `<div class="review-ans">Jawaban Benar: <span class="text-green">${item.correctAnswer}</span></div>` : ""}
+            `;
+            reviewContainer.appendChild(div);
+        });
+    }
+
+    function restartQuiz() {
+        document.getElementById("result-screen").classList.add("hidden");
+        document.getElementById("start-screen").classList.remove("hidden");
+    }
+</script>
+
+</body>
+</html>
